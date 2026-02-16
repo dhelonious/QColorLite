@@ -12,7 +12,7 @@ SETTINGSFILE = "QColor.sublime-settings"
 CONF_KEY = "q_color"
 FOUND_WEBVIEW = False
 SETTINGS = lambda: sublime.load_settings(SETTINGSFILE)
-DEBUG = lambda: sublime.load_settings(SETTINGSFILE).get("_debug", True)
+DEBUG = lambda: sublime.load_settings(SETTINGSFILE).get("_debug", False)
 ENABLED = lambda: sublime.load_settings(SETTINGSFILE).get("_enabled", False)
 
 # LIBS
@@ -198,9 +198,8 @@ class QPicker(object):
             print("PLATAFORM NOT SUPPORTED")
         return ncolor
 
-        
+
 class QColor(sublime_plugin.ViewEventListener):
-    enabled = False
     key_conf = CONF_KEY
     key_ctrl = 'phantoms_enabled'
 
@@ -210,26 +209,22 @@ class QColor(sublime_plugin.ViewEventListener):
         self.set_conf_change()
         self.on_conf_change()
 
-    def settings(self):
-        return sublime.load_settings(SETTINGSFILE)
-
     def isEnabled(self):
         """ Returns True if the full plugin is enabled. """
         if not ENABLED(): return False
-        return self.settings().get(self.key_ctrl, False)
+        return SETTINGS().get(self.key_ctrl, False)
     
     def start(self):
         # Load Settings
-        self.enabled = SETTINGS().get('enabled', False)
-        self.phantom_shape = self.settings().get('phantom_shape', 'circle')
-        self.show_on_minimap = self.settings().get('show_on_minimap', True)
-        self.underline_style = self.settings().get('underline_style', 'stippled')
-        self.underline_color = self.settings().get('underline_color', 'purple')
-        self.hover_preview = self.settings().get('hover_preview', False)
+        self.phantom_shape = SETTINGS().get('phantom_shape', 'circle')
+        self.show_on_minimap = SETTINGS().get('show_on_minimap', True)
+        self.underline_style = SETTINGS().get('underline_style', 'stippled')
+        self.underline_color = SETTINGS().get('underline_color', 'purple')
+        self.hover_preview = SETTINGS().get('hover_preview', False)
         # Util settings
-        named_colors = self.settings().get('named_colors', False)
-        hsl_precision = self.settings().get('hsl_precision', True)
-        hex_upper = self.settings().get('hex_upper_case', False)
+        named_colors = SETTINGS().get('named_colors', False)
+        hsl_precision = SETTINGS().get('hsl_precision', True)
+        hex_upper = SETTINGS().get('hex_upper_case', False)
         QColorUtils.set_conf(hsl_precision, hex_upper, named_colors)
         # Restart Binds
         self.pset = sublime.PhantomSet(self.view, self.key_conf)
@@ -246,12 +241,12 @@ class QColor(sublime_plugin.ViewEventListener):
         # print("QColor", "set_conf_change")
         self.clear_conf_change()
         key_id = "{0}_{1}".format(self.key_conf, self.view.id())
-        self.settings().add_on_change(key_id, self.on_conf_change)
+        SETTINGS().add_on_change(key_id, self.on_conf_change)
 
     def clear_conf_change(self):
         # print("QColor", "clear_conf_change")
         key_id = "{0}_{1}".format(self.key_conf, self.view.id())
-        self.settings().clear_on_change(key_id)
+        SETTINGS().clear_on_change(key_id)
 
     # View Conf Handlers
 
@@ -331,12 +326,12 @@ class QColor(sublime_plugin.ViewEventListener):
     # Events
 
     def on_modified(self):
-        if DEBUG:
+        if DEBUG():
             print('on_modified')
         self.show_phantoms(self.hover_preview)
 
     def on_load(self):
-        if DEBUG:
+        if DEBUG():
             print('on_load')
         self.show_phantoms(self.hover_preview)
 
@@ -383,60 +378,51 @@ class QColorDebug(sublime_plugin.ApplicationCommand):
     key_conf = CONF_KEY
     key_ctrl = '_debug'
 
-    def settings(self):
-        return sublime.load_settings(SETTINGSFILE)
-
     def run(self, toggle=True):
         if toggle:
-            value = self.settings().get(self.key_ctrl, False)
-            self.settings().set(self.key_ctrl, not value)
+            value = SETTINGS().get(self.key_ctrl, False)
+            SETTINGS().set(self.key_ctrl, not value)
             sublime.save_settings(SETTINGSFILE)
 
     def is_checked(self):
-        return self.settings().get(self.key_ctrl, False)
+        return SETTINGS().get(self.key_ctrl, False)
 
 
 class QColorEnabled(sublime_plugin.ApplicationCommand):
     key_conf = CONF_KEY
     key_ctrl = '_enabled'
 
-    def settings(self):
-        return sublime.load_settings(SETTINGSFILE)
-
     def run(self, toggle=True):
         if toggle:
-            value = self.settings().get(self.key_ctrl, False)
-            self.settings().set(self.key_ctrl, not value)
+            value = SETTINGS().get(self.key_ctrl, False)
+            SETTINGS().set(self.key_ctrl, not value)
             sublime.save_settings(SETTINGSFILE)
 
     def description(self):
         return ""
 
     def is_checked(self):
-        return self.settings().get(self.key_ctrl, False)
+        return SETTINGS().get(self.key_ctrl, False)
 
 
 class QColorShow(sublime_plugin.ApplicationCommand):
     key_conf = CONF_KEY
     key_ctrl = 'phantoms_enabled'
 
-    def settings(self):
-        return sublime.load_settings(SETTINGSFILE)
-
     def active_view(self):
         return sublime.active_window().active_view()
 
     def run(self, show=None):
-        value = self.settings().get(self.key_ctrl, False)
+        value = SETTINGS().get(self.key_ctrl, False)
         newvalue = show if show is not None else not value
-        self.settings().set(self.key_ctrl, newvalue)
+        SETTINGS().set(self.key_ctrl, newvalue)
         sublime.save_settings(SETTINGSFILE)
 
     def description(self):
         return ""
         
     def is_checked(self):
-        return self.settings().get(self.key_ctrl, False)
+        return SETTINGS().get(self.key_ctrl, False)
 
     def is_enabled(self):
         return ENABLED()
